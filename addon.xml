@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="script.remember.everything" name="Remember Everything!" version="0.0.1" provider-name="gnvk">
+    <requires>
+        <import addon="xbmc.python" version="2.25.0"/>
+
+
+    </requires>
+    <extension point="xbmc.python.script" library="main.py">
+        <provides>game</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Flash cards to remember.</summary>
+        <description lang="en_GB"></description>
+        <language></language>
+        <platform>linux</platform>
+        <license>Apache-2.0</license>
+        <forum></forum>
+        <website></website>
+        <email>novak.r.gergely@gmail.com</email>
+        <source></source>
+        <news></news>
+        <disclaimer></disclaimer>
+        <assets>
+            <icon>resources/icon.png</icon>
+            <fanart>resources/fanart.jpg</fanart>
+        </assets>
+    </extension>
+</addon>

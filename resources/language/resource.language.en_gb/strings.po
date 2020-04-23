@@ -16,12 +16,21 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#This is a comment
+# Settings
 
 msgctxt "#32000"
-msgid "Example"
+msgid "Client ID"
 msgstr ""
 
 msgctxt "#32001"
-msgid "Debug"
+msgid "Client secret"
+msgstr ""
+
+msgctxt "#32002"
+msgid "Sheet ID"
+msgstr ""
+
+# Game
+msgctxt "#32100"
+msgid "Great job! There are no more cards to review! Come back later ;)"
 msgstr ""

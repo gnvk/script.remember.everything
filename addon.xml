@@ -2,8 +2,6 @@
 <addon id="script.remember.everything" name="Remember Everything!" version="0.0.1" provider-name="gnvk">
     <requires>
         <import addon="xbmc.python" version="2.25.0"/>
-
-
     </requires>
     <extension point="xbmc.python.script" library="main.py">
         <provides>game</provides>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<views>50</views>
+	<controls>
+		<control type="image" id="0">
+			<texture>background.jpg</texture>
+		</control>
+
+		<control type="label" id="1">
+			<align>center</align>
+			<aligny>center</aligny>
+			<wrapmultiline>true</wrapmultiline>
+			<font>font45</font>
+		</control>
+
+		<!-- bottom row with score response list -->
+		<control type="group" id="30">
+			<top>1016</top>
+			<height>64</height>
+
+			<!-- highlight -->
+			<control type="image" id="31">
+				<width>320</width>
+				<texture>highlight.png</texture>
+			</control>
+
+			<!-- 3x incorrect -->
+			<control type="image">
+				<left>64</left>
+				<width>64</width>
+				<texture>incorrect.png</texture>
+			</control>
+			<control type="image">
+				<left>128</left>
+				<width>64</width>
+				<texture>incorrect.png</texture>
+			</control>
+			<control type="image">
+				<left>192</left>
+				<width>64</width>
+				<texture>incorrect.png</texture>
+			</control>
+
+			<!-- 2x incorrect -->
+			<control type="image">
+				<left>416</left>
+				<width>64</width>
+				<texture>incorrect.png</texture>
+			</control>
+			<control type="image">
+				<left>480</left>
+				<width>64</width>
+				<texture>incorrect.png</texture>
+			</control>
+
+			<!-- incorrect -->
+			<control type="image">
+				<left>768</left>
+				<width>64</width>
+				<texture>incorrect.png</texture>
+			</control>
+
+			<!-- correct -->
+			<control type="image">
+				<left>1088</left>
+				<width>64</width>
+				<texture>correct.png</texture>
+			</control>
+
+			<!-- 2x correct -->
+			<control type="image">
+				<left>1376</left>
+				<width>64</width>
+				<texture>correct.png</texture>
+			</control>
+			<control type="image">
+				<left>1440</left>
+				<width>64</width>
+				<texture>correct.png</texture>
+			</control>
+
+			<!-- 3x correct -->
+			<control type="image">
+				<left>1664</left>
+				<width>64</width>
+				<texture>correct.png</texture>
+			</control>
+			<control type="image">
+				<left>1728</left>
+				<width>64</width>
+				<texture>correct.png</texture>
+			</control>
+			<control type="image">
+				<left>1792</left>
+				<width>64</width>
+				<texture>correct.png</texture>
+			</control>
+		</control>
+	</controls>
+</window>

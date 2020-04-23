@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <setting id="debug" type="bool" label="32001" default="false"/>
+    <setting type="text" label="32000" id="client_id"/>
+    <setting type="text" label="32001" id="client_secret"/>
+    <setting type="text" label="32002" id="sheet_id"/>
 </settings>
 

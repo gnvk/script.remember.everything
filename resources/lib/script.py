@@ -142,8 +142,16 @@ class GUI(xbmcgui.WindowXML):
             card.first_practice = datetime.now().isoformat()
         card.next_practice = (datetime.now() + timedelta(days=card.interval)).isoformat()
 
-        threading.Thread(target=self.sheet.update_card, args=(card,)).start()
+        threading.Thread(target=self.update_card, args=(card,)).start()
 
+    def update_card(self, card):
+        try:
+            self.sheet.update_card(card)
+        except sheet.SheetError as se:
+            logger.warning(se.message)
+            cmd = 'Notification(Error, ' + \
+                'Could not update the question, 3000, {}/resources/icon.png)'.format(CWD)
+            xbmc.executebuiltin(cmd)
 
     def set_mid_label(self, text):
         self.mid_label.setLabel(text)  # pylint:disable=no-member

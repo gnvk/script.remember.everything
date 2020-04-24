@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import requests
+import shutil
 import threading
 import xbmc
 import xbmcaddon
@@ -13,6 +14,7 @@ import xbmcgui
 from resources.lib import kodiutils
 from resources.lib import kodilogging
 from resources.lib import sheet
+from resources.lib import pictures
 
 
 ADDON = xbmcaddon.Addon()
@@ -26,6 +28,7 @@ class GUI(xbmcgui.WindowXML):
     def onInit(self):
         self.mid_label = self.getControl(1)
         self.progress_label = self.getControl(2)
+        self.picture = self.getControl(3)
         self.score_row = self.getControl(30)
         self.highlight = self.getControl(31)
 
@@ -114,21 +117,42 @@ class GUI(xbmcgui.WindowXML):
 
     def show_question(self):
         self.answer_shown = False
+        self.picture.setVisible(False)
         self.update_progress_label()
 
         if self.idx >= len(self.cards):
+            self.mid_label.setPosition(0, 500)
             self.set_label(self.mid_label, kodiutils.get_string(32100))
             return
 
         card = self.cards[self.idx]
         self.set_label(self.mid_label, card.question)
+        self.show_picture(card.question_picture, 'q-{}'.format(card.idx))
 
     def show_answer(self):
         self.answer_shown = True
+        self.picture.setVisible(False)
 
         card = self.cards[self.idx]
         self.set_label(self.mid_label, card.answer)
         self.score = 3
+        self.show_picture(card.answer_picture, 'a-{}'.format(card.idx))
+
+    def show_picture(self, picture_url, filename):
+        if not picture_url:
+            self.picture.setVisible(False)
+            self.mid_label.setPosition(0, 500)
+            return
+        self.mid_label.setPosition(0, 64)
+        try:
+            picture = pictures.download_picture(picture_url, filename)
+            self.picture.setImage(picture.path)  # pylint:disable=no-member
+            self.picture.setPosition(picture.x, picture.y)
+            self.picture.setWidth(picture.width)
+            self.picture.setHeight(picture.height)
+            self.picture.setVisible(True)
+        except pictures.PictureError as e:
+            self.show_notification('Could not download image: ' + e.message)
 
     def update_current_card(self):
         card = self.cards[self.idx]
@@ -159,12 +183,10 @@ class GUI(xbmcgui.WindowXML):
             self.sheet.update_card(card)
         except sheet.SheetError as se:
             logger.warning(se.message)
-            cmd = 'Notification(Error, ' + \
-                'Could not update the question, 3000, {}/resources/icon.png)'.format(CWD)
-            xbmc.executebuiltin(cmd)
+            self.show_notification('Could not update the question')
 
     def update_progress_label(self):
-        text = '{} / {}'.format(self.idx + 1, len(self.cards)) \
+        text = '{} / {} '.format(self.idx + 1, len(self.cards)) \
             if self.idx < len(self.cards) else ''
         self.set_label(self.progress_label, text)
 
@@ -172,8 +194,16 @@ class GUI(xbmcgui.WindowXML):
     def set_label(control, text):
         control.setLabel(text)
 
+    @staticmethod
+    def show_notification(text):
+        xbmc.log(text, level=xbmc.LOGWARNING)
+        cmd = 'Notification(Remember Everything!, {}, 5000, {}/resources/icon.png)'.format(
+            text, CWD)
+        xbmc.executebuiltin(cmd)
+
 
 def show_ui():
-    ui = GUI('main-window.xml', CWD, 'default', '1080i', False)
-    ui.doModal()
-    del ui
+    show_error = GUI('main-window.xml', CWD, 'default', '1080i', False)
+    show_error.doModal()
+    del show_error
+    pictures.clean_download_dir()

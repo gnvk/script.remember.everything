@@ -19,6 +19,8 @@ class Card(object):
         self.streak = int(streak) if streak else 0
         self.interval = float(interval) if interval else 1
         self.easiness = float(easiness) if easiness else 2.5
+        self.question_picture = None
+        self.answer_picture = None
 
 
 class SheetError(Exception):
@@ -37,18 +39,23 @@ class GoogleSheets(object):
         self._load_tokens()
 
     def get_cards(self):
-        url = '{}/{}/values/A2:G'.format(self._BASE_URL, self._sheet_id)
+        url = '{}/{}/values/A2:I'.format(self._BASE_URL, self._sheet_id)
         resp = requests.get(url, headers={
             'Authorization': 'Bearer ' + self._token
         })
         self._check_resp(resp)
         rows = resp.json()['values']
         for i, row in enumerate(rows):
-            yield Card(
+            card = Card(
                 idx=2 + i, question=row[5], answer=row[6],
                 first_practice=row[0], next_practice=row[1],
                 streak=row[2], interval=row[3], easiness=row[4]
             )
+            if len(row) > 7:
+                card.question_picture = row[7]
+            if len(row) > 8:
+                card.answer_picture = row[8]
+            yield card
 
     def update_card(self, card):
         # type: (card) -> None

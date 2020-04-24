@@ -25,6 +25,7 @@ logger = logging.getLogger(ADDON.getAddonInfo('id'))
 class GUI(xbmcgui.WindowXML):
     def onInit(self):
         self.mid_label = self.getControl(1)
+        self.progress_label = self.getControl(2)
         self.score_row = self.getControl(30)
         self.highlight = self.getControl(31)
 
@@ -77,7 +78,7 @@ class GUI(xbmcgui.WindowXML):
             ]
             random.shuffle(self.cards)
         except sheet.SheetError as se:
-            self.set_mid_label(
+            self.set_label(self.mid_label,
                 'Could not fetch the given Google sheet. Error: {}'.format(se.message))
         else:
             self.idx = 0
@@ -113,19 +114,20 @@ class GUI(xbmcgui.WindowXML):
 
     def show_question(self):
         self.answer_shown = False
+        self.update_progress_label()
 
         if self.idx >= len(self.cards):
-            self.set_mid_label(kodiutils.get_string(32100))
+            self.set_label(self.mid_label, kodiutils.get_string(32100))
             return
 
         card = self.cards[self.idx]
-        self.set_mid_label(card.question)
+        self.set_label(self.mid_label, card.question)
 
     def show_answer(self):
         self.answer_shown = True
 
         card = self.cards[self.idx]
-        self.set_mid_label(card.answer)
+        self.set_label(self.mid_label, card.answer)
         self.score = 3
 
     def update_current_card(self):
@@ -161,8 +163,14 @@ class GUI(xbmcgui.WindowXML):
                 'Could not update the question, 3000, {}/resources/icon.png)'.format(CWD)
             xbmc.executebuiltin(cmd)
 
-    def set_mid_label(self, text):
-        self.mid_label.setLabel(text)  # pylint:disable=no-member
+    def update_progress_label(self):
+        text = '{} / {}'.format(self.idx + 1, len(self.cards)) \
+            if self.idx < len(self.cards) else ''
+        self.set_label(self.progress_label, text)
+
+    @staticmethod
+    def set_label(control, text):
+        control.setLabel(text)
 
 
 def show_ui():

@@ -4,6 +4,7 @@ import os
 from PIL import Image
 import requests
 import shutil
+from time import sleep
 
 from . import IMG_DIR
 
@@ -32,19 +33,37 @@ class PictureError(Exception):
 
 
 def download_picture(url, name):
-    # type: (str, str) -> Picture
+    # type: (str, str) -> None
+    path = _get_picture_path(name)
+    if os.path.exists(path):
+        return
     resp = requests.get(url, stream=True)
     if not resp.ok:
         raise PictureError(resp.text)
-    content_type = resp.headers['Content-Type']
-    extension = mimetypes.guess_extension(content_type) or '.jpg'
-
-    path = os.path.join(IMG_DIR, '{}{}'.format(name, extension))
     with open(path, 'wb') as out_file:
         shutil.copyfileobj(resp.raw, out_file)
 
+
+def _get_picture_path(name):
+    return os.path.join(IMG_DIR, name)
+
+
+def _get_image_with_retry(path):
+    limit = 30
+    for i in range(limit):
+        try:
+            return Image.open(path)
+        except IOError:
+            sleep(0.1)
+            if i == limit - 1:
+                raise
+
+
+def get_picture(name):
+    # type: (str) -> Picture
+    path = _get_picture_path(name)
     try:
-        image = Image.open(path)
+        image = _get_image_with_retry(path)
     except IOError as e:
         raise PictureError(e.message)
     width, height = image.size
@@ -56,10 +75,4 @@ def download_picture(url, name):
         height *= (MAX_HEIGHT / height)
     x = SCREEN_WIDTH / 2 - width / 2
     y = SCREEN_HEIGHT / 2 - height / 2
-
     return Picture(path, int(x), int(y), int(width), int(height))
-
-
-def clean_download_dir():
-    for filename in os.listdir(IMG_DIR):
-        os.remove(os.path.join(IMG_DIR, filename))

@@ -84,12 +84,26 @@ class GUI(xbmcgui.WindowXML):
             random.shuffle(self.cards)
         except sheet.SheetError as se:
             self.set_label(self.mid_label,
-                'Could not fetch the given Google sheet. Error: {}'.format(se.message))
+                           'Could not fetch the given Google sheet. Error: {}'.format(se.message))
         else:
             self.idx = 0
+            threading.Thread(target=self.download_pictures).start()
             self.show_question()
         finally:
             xbmc.executebuiltin('Dialog.Close(busydialognocancel)')
+
+    def download_pictures(self):
+        picture_urls = [
+            (card.question_picture, 'q{}'.format(card.idx))
+            for card in self.cards
+            if card.question_picture
+        ] + [
+            (card.answer_picture, 'a{}'.format(card.idx))
+            for card in self.cards
+            if card.answer_picture
+        ]
+        for picture_url, name in picture_urls:
+            pictures.download_picture(picture_url, name)
 
     @property
     def score(self):
@@ -122,7 +136,10 @@ class GUI(xbmcgui.WindowXML):
 
         card = self.cards[self.idx]
         self.set_label(self.mid_label, card.question)
-        self.show_picture(card.question_picture, 'q-{}'.format(card.idx))
+        if card.question_picture:
+            self.show_picture('q{}'.format(card.idx))
+        else:
+            self.hide_picture()
 
     def show_answer(self):
         self.answer_shown = True
@@ -131,23 +148,26 @@ class GUI(xbmcgui.WindowXML):
         card = self.cards[self.idx]
         self.set_label(self.mid_label, card.answer)
         self.score = 3
-        self.show_picture(card.answer_picture, 'a-{}'.format(card.idx))
+        if card.answer_picture:
+            self.show_picture('a{}'.format(card.idx))
+        else:
+            self.hide_picture()
 
-    def show_picture(self, picture_url, filename):
-        if not picture_url:
-            self.picture.setVisible(False)
-            self.mid_label.setPosition(0, 500)
-            return
+    def show_picture(self, name):
         self.mid_label.setPosition(0, 64)
         try:
-            picture = pictures.download_picture(picture_url, filename)
+            picture = pictures.get_picture(name)
             self.picture.setImage(picture.path)  # pylint:disable=no-member
             self.picture.setPosition(picture.x, picture.y)
             self.picture.setWidth(picture.width)
             self.picture.setHeight(picture.height)
             self.picture.setVisible(True)
         except pictures.PictureError as e:
-            self.show_notification('Could not download image: ' + e.message)
+            self.show_notification('Cannot show image: ' + e.message)
+
+    def hide_picture(self):
+        self.picture.setVisible(False)
+        self.mid_label.setPosition(0, 500)
 
     def update_current_card(self):
         card = self.cards[self.idx]
@@ -182,4 +202,3 @@ def show_ui():
     show_error = GUI('main-window.xml', CWD, 'default', '1080i', False)
     show_error.doModal()
     del show_error
-    pictures.clean_download_dir()

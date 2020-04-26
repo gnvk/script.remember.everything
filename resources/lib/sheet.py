@@ -6,22 +6,7 @@ import time
 import xbmcgui
 
 from . import DATA_DIR
-
-
-class Card(object):
-    def __init__(self, idx, question, answer, first_practice, next_practice,
-                 streak, interval, easiness):
-        self.idx = idx
-        self.question = question
-        self.answer = answer
-        self.first_practice = first_practice
-        self.next_practice = next_practice
-        self.streak = int(streak) if streak else 0
-        self.interval = float(interval) if interval else 1
-        self.easiness = float(easiness) if easiness else 2.5
-        self.question_picture = None
-        self.answer_picture = None
-
+from .card import Card
 
 class SheetError(Exception):
     pass

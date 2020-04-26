@@ -11,6 +11,7 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 
+from resources.lib import card
 from resources.lib import kodiutils
 from resources.lib import kodilogging
 from resources.lib import sheet
@@ -31,6 +32,7 @@ class GUI(xbmcgui.WindowXML):
         self.picture = self.getControl(3)
         self.score_row = self.getControl(30)
         self.highlight = self.getControl(31)
+        self.score_label = self.getControl(32)
 
         self.answer_shown = False
         self.score = 3
@@ -91,20 +93,13 @@ class GUI(xbmcgui.WindowXML):
 
     @property
     def score(self):
-        """
-        5 - perfect response
-        4 - correct response after a hesitation
-        3 - correct response recalled with serious difficulty
-        2 - incorrect response; where the correct one seemed easy to recall
-        1 - incorrect response; the correct one remembered
-        0 - complete blackout
-        """
         return self._score
 
     @score.setter
     def score(self, score):
         self._score = max(0, min(5, score))
-        self.highlight.setPosition(320 * self._score, 0)
+        self.highlight.setPosition(320 * self.score, 0)
+        self.set_label(self.score_label, card.scores[self.score])
 
     @property
     def answer_shown(self):
@@ -156,26 +151,7 @@ class GUI(xbmcgui.WindowXML):
 
     def update_current_card(self):
         card = self.cards[self.idx]
-
-        if self.score < 3:
-            card.streak = 0
-        else:
-            card.streak += 1
-        card.easiness = max(
-            1.3,  card.easiness + 0.1 - (5.0 - self.score) * (0.08 + (5.0 - self.score) * 0.02))
-        if card.streak == 0:
-            card.interval = 0
-        elif card.streak == 1:
-            card.interval = 1
-        elif card.streak == 2:
-            card.interval = 6
-        else:
-            card.interval = card.interval * card.easiness
-
-        if not card.first_practice:
-            card.first_practice = datetime.now().isoformat()
-        card.next_practice = (datetime.now() + timedelta(days=card.interval)).isoformat()
-
+        card.update(self.score)
         threading.Thread(target=self.update_card, args=(card,)).start()
 
     def update_card(self, card):

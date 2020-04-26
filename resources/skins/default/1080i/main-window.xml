@@ -9,7 +9,6 @@
 
 		<!-- middle label -->
 		<control type="label" id="1">
-			<left>100</left>
 			<top>500</top>
 			<align>center</align>
 			<wrapmultiline>true</wrapmultiline>
@@ -29,6 +28,12 @@
 		<control type="group" id="30">
 			<top>1016</top>
 			<height>64</height>
+
+			<control type="label" id="32">
+				<top>-40</top>
+				<align>center</align>
+				<label>correct response after a hesitation</label>
+			</control>
 
 			<!-- highlight -->
 			<control type="image" id="31">

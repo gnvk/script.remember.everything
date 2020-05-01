@@ -31,6 +31,8 @@ class GoogleSheets(object):
         self._check_resp(resp)
         rows = resp.json()['values']
         for i, row in enumerate(rows):
+            if len(row) < 7:
+                continue
             card = Card(
                 idx=2 + i, question=row[5], answer=row[6],
                 first_practice=row[0], next_practice=row[1],

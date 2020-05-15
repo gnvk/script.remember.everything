@@ -40,6 +40,9 @@ def download_picture(url, name):
     resp = requests.get(url, stream=True)
     if not resp.ok:
         raise PictureError(resp.text)
+    dir_ = os.path.dirname(path)
+    if not os.path.exists(dir_):
+        os.mkdir(dir_)
     with open(path, 'wb') as out_file:
         shutil.copyfileobj(resp.raw, out_file)
 

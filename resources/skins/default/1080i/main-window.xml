@@ -26,7 +26,9 @@
 
 		<!-- bottom row with score response list -->
 		<control type="group" id="30">
-			<top>1016</top>
+			<!-- this is a hack: if we set the visibility to false there's no way to display it later
+			if we try to set the visibility to false in OnInit(), it still flashes up for a second -->
+			<top>2000</top>
 			<height>64</height>
 
 			<control type="label" id="32">

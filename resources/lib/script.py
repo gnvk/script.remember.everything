@@ -25,7 +25,11 @@ CWD = ADDON.getAddonInfo('path').decode('utf-8')
 logger = logging.getLogger(ADDON.getAddonInfo('id'))
 
 
-class GUI(xbmcgui.WindowXML):
+class MainWindow(xbmcgui.WindowXML):
+    def __init__(self, *args, **kwargs):
+        self.sheet = kwargs['sheet']
+        self.selected_sheet = kwargs['selected_sheet']
+
     def onInit(self):
         self.mid_label = self.getControl(1)
         self.progress_label = self.getControl(2)
@@ -35,18 +39,8 @@ class GUI(xbmcgui.WindowXML):
         self.score_label = self.getControl(32)
 
         self.answer_shown = False
+        self.score_row.setPosition(0, 1016)  # hack, see comment in the XML
         self.score = 3
-
-        while True:
-            client_id = kodiutils.get_setting('client_id')
-            client_secret = kodiutils.get_setting('client_secret')
-            sheet_id = kodiutils.get_setting('sheet_id')
-            if client_id and client_secret and sheet_id:
-                break
-            xbmcgui.Dialog().ok('Error', 'Missing settings')
-            kodiutils.show_settings()
-
-        self.sheet = sheet.GoogleSheets(client_id, client_secret, sheet_id)
 
         self.start_game()
 
@@ -71,20 +65,20 @@ class GUI(xbmcgui.WindowXML):
             else:
                 self.show_answer()
         else:
-            super(GUI, self).onAction(action)
+            super(MainWindow, self).onAction(action)
 
     def start_game(self):
         xbmc.executebuiltin('ActivateWindow(busydialognocancel)')
         try:
             self.cards = [
                 card
-                for card in self.sheet.get_cards()
+                for card in self.sheet.get_cards(self.selected_sheet)
                 if card.next_practice < datetime.now().isoformat()
             ]
             random.shuffle(self.cards)
         except sheet.SheetError as se:
-            self.set_label(self.mid_label,
-                           'Could not fetch the given Google sheet. Error: {}'.format(se.message))
+            set_label(self.mid_label,
+                'Could not fetch the given Google sheet. Error: {}'.format(se.message))
         else:
             self.idx = 0
             threading.Thread(target=self.download_pictures).start()
@@ -94,11 +88,11 @@ class GUI(xbmcgui.WindowXML):
 
     def download_pictures(self):
         picture_urls = [
-            (card.question_picture, 'q{}'.format(card.idx))
+            (card.question_picture, '{}/q{}'.format(self.selected_sheet, card.idx))
             for card in self.cards
             if card.question_picture
         ] + [
-            (card.answer_picture, 'a{}'.format(card.idx))
+            (card.answer_picture, '{}/a{}'.format(self.selected_sheet, card.idx))
             for card in self.cards
             if card.answer_picture
         ]
@@ -113,7 +107,7 @@ class GUI(xbmcgui.WindowXML):
     def score(self, score):
         self._score = max(0, min(5, score))
         self.highlight.setPosition(320 * self.score, 0)
-        self.set_label(self.score_label, card.scores[self.score])
+        set_label(self.score_label, card.scores[self.score])
 
     @property
     def answer_shown(self):
@@ -131,13 +125,13 @@ class GUI(xbmcgui.WindowXML):
 
         if self.idx >= len(self.cards):
             self.mid_label.setPosition(0, 500)
-            self.set_label(self.mid_label, kodiutils.get_string(32100))
+            set_label(self.mid_label, kodiutils.get_string(32100))
             return
 
         card = self.cards[self.idx]
-        self.set_label(self.mid_label, card.question)
+        set_label(self.mid_label, card.question)
         if card.question_picture:
-            self.show_picture('q{}'.format(card.idx))
+            self.show_picture('{}/q{}'.format(self.selected_sheet, card.idx))
         else:
             self.hide_picture()
 
@@ -146,10 +140,10 @@ class GUI(xbmcgui.WindowXML):
         self.picture.setVisible(False)
 
         card = self.cards[self.idx]
-        self.set_label(self.mid_label, card.answer)
+        set_label(self.mid_label, card.answer)
         self.score = 3
         if card.answer_picture:
-            self.show_picture('a{}'.format(card.idx))
+            self.show_picture('{}/a{}'.format(self.selected_sheet, card.idx))
         else:
             self.hide_picture()
 
@@ -163,7 +157,7 @@ class GUI(xbmcgui.WindowXML):
             self.picture.setHeight(picture.height)
             self.picture.setVisible(True)
         except pictures.PictureError as e:
-            self.show_notification('Cannot show image: ' + e.message)
+            show_notification('Cannot show image: ' + e.message)
 
     def hide_picture(self):
         self.picture.setVisible(False)
@@ -176,29 +170,96 @@ class GUI(xbmcgui.WindowXML):
 
     def update_card(self, card):
         try:
-            self.sheet.update_card(card)
+            self.sheet.update_card(self.selected_sheet, card)
         except sheet.SheetError as se:
             logger.warning(se.message)
-            self.show_notification('Could not update the question')
+            show_notification('Could not update the question')
 
     def update_progress_label(self):
         text = '{} / {} '.format(self.idx + 1, len(self.cards)) \
             if self.idx < len(self.cards) else ''
-        self.set_label(self.progress_label, text)
+        set_label(self.progress_label, text)
 
-    @staticmethod
-    def set_label(control, text):
-        control.setLabel(text)
 
-    @staticmethod
-    def show_notification(text):
-        xbmc.log(text, level=xbmc.LOGWARNING)
-        cmd = 'Notification(Remember Everything!, {}, 5000, {}/resources/icon.png)'.format(
-            text, CWD)
-        xbmc.executebuiltin(cmd)
+class SelectSheetWindow(xbmcgui.WindowXML):
+    def __init__(self, *args, **kwargs):
+        self.sheet = kwargs['sheet']
+        self.sheet_names = []
+
+    def onInit(self):
+        self.mid_label = self.getControl(1)
+
+        xbmc.executebuiltin('Container.SetViewMode(50)')
+        xbmc.executebuiltin('ActivateWindow(busydialognocancel)')
+        self.clearList()
+
+        try:
+            self.sheet_names = self.sheet.get_sheet_names()
+        except sheet.SheetError as se:
+            set_label(self.mid_label,
+                'Could not fetch the given Google sheet. Error: {}'.format(se.message))
+            return
+        finally:
+            xbmc.executebuiltin('Dialog.Close(busydialognocancel)')
+
+        listitems = [
+            xbmcgui.ListItem(sheet_name)
+            for sheet_name in self.sheet_names
+        ]
+        self.addItems(listitems)
+        xbmc.sleep(100)
+        self.setFocusId(self.getCurrentContainerId())
+
+
+    def onAction(self, action):
+        if action.getId() == xbmcgui.ACTION_SELECT_ITEM:
+            selected_sheet = self.sheet_names[self.getCurrentListPosition()]
+            show_main_window(self.sheet, selected_sheet)
+        else:
+            super(SelectSheetWindow, self).onAction(action)
+
+
+def set_label(control, text):
+    control.setLabel(text)
+
+
+def show_notification(text):
+    xbmc.log(text, level=xbmc.LOGWARNING)
+    cmd = 'Notification(Remember Everything!, {}, 5000, {}/resources/icon.png)'.format(
+        text, CWD)
+    xbmc.executebuiltin(cmd)
+
+
+def show_main_window(sheet_, selected_sheet):
+    main_window = MainWindow(
+        'main-window.xml', CWD, 'default', '1080i', False,
+        sheet=sheet_, selected_sheet=selected_sheet)
+    main_window.doModal()
+    del main_window
 
 
 def show_ui():
-    show_error = GUI('main-window.xml', CWD, 'default', '1080i', False)
-    show_error.doModal()
-    del show_error
+    client_id = kodiutils.get_setting('client_id')
+    if not client_id:
+        xbmcgui.Dialog().ok('Error', 'Google Client ID is missing. ',
+            'Please update it in the settings and restart!')
+        return
+
+    client_secret = kodiutils.get_setting('client_secret')
+    if not client_secret:
+        xbmcgui.Dialog().ok('Error', 'Google Client secret is missing. ',
+            'Please update it in the settings and restart!')
+        return
+
+    sheet_id = kodiutils.get_setting('sheet_id')
+    if not sheet_id:
+        xbmcgui.Dialog().ok('Error', 'Google Sheet ID is missing. ',
+            'Please update it in the settings and restart!')
+        return
+
+    _sheet = sheet.GoogleSheets(client_id, client_secret, sheet_id)
+
+    select_sheet_window = SelectSheetWindow(
+        'select-sheet-window.xml', CWD, 'default', '1080i', True, sheet=_sheet)
+    select_sheet_window.doModal()
+    del select_sheet_window

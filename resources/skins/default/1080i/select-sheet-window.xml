@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<views>50</views>
+	<controls>
+		<control type="image">
+			<texture>background.jpg</texture>
+		</control>
+		<control type="label" id="1">
+			<align>center</align>
+			<aligny>center</aligny>
+			<wrapmultiline>true</wrapmultiline>
+		</control>
+    <control type="list" id="50">
+			<left>480</left>
+			<top>240</top>
+			<width>960</width>
+			<height>544</height>
+			<viewtype label="535">list</viewtype>
+      <itemlayout height="96" width="960">
+				<control type="label">
+					<left>24</left>
+					<top>24</top>
+					<label>$INFO[ListItem.Label]</label>
+				</control>
+			</itemlayout>
+			<focusedlayout height="96" width="960">
+				<control type="image">
+					<texture>highlight.png</texture>
+				</control>
+				<control type="label">
+					<left>24</left>
+					<top>24</top>
+					<label>$INFO[ListItem.Label]</label>
+				</control>
+			</focusedlayout>
+    </control>
+  </controls>
+</window>

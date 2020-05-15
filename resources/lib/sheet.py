@@ -23,11 +23,19 @@ class GoogleSheets(object):
         self._cred_path = os.path.join(DATA_DIR, 'creds.json')
         self._load_tokens()
 
-    def get_cards(self):
-        url = '{}/{}/values/A2:I'.format(self._BASE_URL, self._sheet_id)
-        resp = requests.get(url, headers={
-            'Authorization': 'Bearer ' + self._token
-        })
+    def get_sheet_names(self):
+        url = '{}/{}'.format(self._BASE_URL, self._sheet_id)
+        resp = requests.get(url, headers=self._headers)
+        self._check_resp(resp)
+        sheets = resp.json()['sheets']
+        return [
+            sheet['properties']['title']
+            for sheet in sheets
+        ]
+
+    def get_cards(self, sheet_name):
+        url = '{}/{}/values/{}!A2:I'.format(self._BASE_URL, self._sheet_id, sheet_name)
+        resp = requests.get(url, headers=self._headers)
         self._check_resp(resp)
         rows = resp.json()['values']
         for i, row in enumerate(rows):
@@ -44,10 +52,10 @@ class GoogleSheets(object):
                 card.answer_picture = row[8]
             yield card
 
-    def update_card(self, card):
+    def update_card(self, sheet_name, card):
         # type: (card) -> None
-        url = '{0}/{1}/values/A{2}:E{2}?valueInputOption=RAW'.format(
-            self._BASE_URL, self._sheet_id, card.idx)
+        url = '{0}/{1}/values/{2}!A{3}:E{3}?valueInputOption=RAW'.format(
+            self._BASE_URL, self._sheet_id, sheet_name, card.idx)
         resp = requests.put(url, json={
             'values': [
                 [
@@ -58,9 +66,7 @@ class GoogleSheets(object):
                     card.easiness
                 ]
             ]
-        }, headers={
-            'Authorization': 'Bearer ' + self._token
-        })
+        }, headers=self._headers)
         self._check_resp(resp)
 
     @property
@@ -68,6 +74,12 @@ class GoogleSheets(object):
         if self._access_token_expires_at <= int(time.time()):
             self._refresh_access_token()
         return self._access_token
+
+    @property
+    def _headers(self):
+        return {
+            'Authorization': 'Bearer ' + self._token
+        }
 
     def _check_resp(self, resp):
         if not resp.ok:

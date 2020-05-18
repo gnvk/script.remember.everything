@@ -51,22 +51,11 @@ def _get_picture_path(name):
     return os.path.join(IMG_DIR, name)
 
 
-def _get_image_with_retry(path):
-    limit = 30
-    for i in range(limit):
-        try:
-            return Image.open(path)
-        except IOError:
-            sleep(0.1)
-            if i == limit - 1:
-                raise
-
-
 def get_picture(name):
     # type: (str) -> Picture
     path = _get_picture_path(name)
     try:
-        image = _get_image_with_retry(path)
+        image = Image.open(path)
     except IOError as e:
         raise PictureError(e.message)
     width, height = image.size

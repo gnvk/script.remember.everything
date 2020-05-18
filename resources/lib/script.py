@@ -81,7 +81,7 @@ class MainWindow(xbmcgui.WindowXML):
                 'Could not fetch the given Google sheet. Error: {}'.format(se.message))
         else:
             self.idx = 0
-            threading.Thread(target=self.download_pictures).start()
+            self.download_pictures()
             self.show_question()
         finally:
             xbmc.executebuiltin('Dialog.Close(busydialognocancel)')

@@ -97,7 +97,10 @@ class MainWindow(xbmcgui.WindowXML):
             if card.answer_picture
         ]
         for picture_url, name in picture_urls:
-            pictures.download_picture(picture_url, name)
+            try:
+                pictures.download_picture(picture_url, name)
+            except pictures.PictureError as pe:
+                show_notification(pe.message)
 
     @property
     def score(self):
@@ -224,10 +227,13 @@ def set_label(control, text):
 
 
 def show_notification(text):
-    xbmc.log(text, level=xbmc.LOGWARNING)
-    cmd = 'Notification(Remember Everything!, {}, 5000, {}/resources/icon.png)'.format(
-        text, CWD)
-    xbmc.executebuiltin(cmd)
+    try:
+        xbmc.log(text, level=xbmc.LOGWARNING)
+        cmd = 'Notification(Remember Everything!, {}, 5000, {}/resources/icon.png)'.format(
+            text, CWD)
+        xbmc.executebuiltin(cmd)
+    except UnicodeEncodeError:
+        pass
 
 
 def show_main_window(sheet_, selected_sheet):
